@@ -21,4 +21,5 @@ I'm working on the following features to make this bot much more interesting:
 - A range of new actions, such as jumping, digging in different directions, defensive moves, etc.
 - Primitive vision to detect successful vs blocked movement.
 - Computer vision with OpenCV to seek and take action on appropriate tiles.
-- Drowning and water detection and avoidance.
+- Detcting when the bot is drowning or under attack.
+- Avoiding water, lave, and other hazards.
