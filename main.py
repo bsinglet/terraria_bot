@@ -1,12 +1,14 @@
 __author__ = 'Benjamin M. Singleton'
-__date__ = '28 June 2021'
-__version = '0.2.0'
+__date__ = '05 July 2021'
+__version = '0.2.1'
 
 from typing import Tuple
 import pyautogui
 import time
 import random
+import numpy as np
 import cv2
+import os
 
 PICKAXE_HOTKEY = '2'
 TORCH_HOTKEY = '5'
@@ -47,6 +49,61 @@ def look_for_water():
 
 def check_if_moving():
     pass
+
+
+def find_template(template_filename: str, target_picture_filename: str, threshold: float) -> None:
+    """
+    Simple test function for finding desired images in screenshots. This will
+    be refactored or removed from production builds.
+    :param template_filename: The filename of the screenshot to search inside of.
+    :type template_filename: str
+    :param target_picture_filename: The filename of the image we hope to locate in the screenshot.
+    :type target_picture_filename: str
+    :param threshold: The minimum confidence level OpenCV should trust for matching the
+    template. Experimental testing indicates 0.7 is a very good value.
+    :type threshold: float
+    :return: None
+    :rtype: None
+    """
+
+    # load the image we're going to be searching inside of
+    img_rgb = cv2.imread(target_picture_filename)
+    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+    # load the smaller image that we want to find in img_gray
+    template = cv2.imread(template_filename, 0)
+    width, height = template.shape[::-1]
+
+    # find all occurrences of template in img_gray above the given threshold
+    # and render a red rectangle around each.
+    result = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
+    location = np.where(result >= threshold)
+    for each_point in zip(*location[::-1]):
+        cv2.rectangle(img_rgb, each_point, (each_point[0] + width, each_point[1] + height), (0, 0, 255), 2)
+
+    # save the resulting image with highlighted rectangles in the format [item_name]_threshold_[threshold].png
+    # for example, 'torch_0_threshold_0.7.png' or 'iron_ore_threshold_0.8.png'
+    item_name = template_filename.split('/')[-1]
+    item_name = item_name.split('.png')[0]
+    cv2.imwrite(f'{item_name}_threshold_{str(threshold)}.png', img_rgb)
+    return
+
+
+def test_thresholds() -> None:
+    """
+    Takes each template image (i.e., images of items, monsters, etc) in the
+    `Imagges/cropped_images` directory. Then it tries to find that template
+    in the `target_image_0.png` image with different thresholds. The results
+    of these tests are saved in appropriately named files.
+    :return: None
+    """
+    template_files = list()
+    for (dirpath, dirname, filenames) in os.walk('Images/cropped_images/'):
+        for each_filename in filenames:
+            template_files.append(dirpath + each_filename)
+    for each_template in template_files:
+        for threshold in [0.6, 0.7, 0.8]:
+            find_template(each_template, 'target_image_0.PNG', threshold)
+        break
 
 
 def main_terraria() -> None:
@@ -91,5 +148,6 @@ def main_terraria() -> None:
 
 
 if __name__ == '__main__':
-    time.sleep(5)
-    main_terraria()
+    # time.sleep(5)
+    # main_terraria()
+    test_thresholds()
